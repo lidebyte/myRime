@@ -1,0 +1,45 @@
+name: Sync sogoupopular dict
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 每天凌晨3点20分运行（UTC时间，对应北京时间11点20分）
+    - cron: '20 3 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download latest sogoupopular dict
+        run: |
+          curl -L \
+            "https://raw.githubusercontent.com/ASC8384/SogouPopularDict/main/data/luna_pinyin.sogoupopular.dict.yaml" \
+            -o "dicts/extend/luna_pinyin.sogoupopular.dict.yaml"
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet -- dicts/extend/luna_pinyin.sogoupopular.dict.yaml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit changes
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add dicts/extend/luna_pinyin.sogoupopular.dict.yaml
+          git commit -m "chore: 同步搜狗网络流行词库"
+
+      - name: Push changes
+        if: steps.diff.outputs.changed == 'true'
+        run: git push
