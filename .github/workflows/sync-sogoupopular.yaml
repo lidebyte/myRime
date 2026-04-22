@@ -31,6 +31,13 @@ jobs:
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+          
+      - name: Read dict version
+        if: steps.diff.outputs.changed == 'true'
+        id: version
+        run: |
+          version=$(grep '^version:' dicts/extend/luna_pinyin.sogoupopular.dict.yaml | sed 's/version: "\(.*\)"/\1/')
+          echo "value=$version" >> "$GITHUB_OUTPUT"
 
       - name: Commit changes
         if: steps.diff.outputs.changed == 'true'
@@ -38,7 +45,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add dicts/extend/luna_pinyin.sogoupopular.dict.yaml
-          git commit -m "chore: 同步搜狗网络流行词库"
+          git commit -m "chore: 同步搜狗网络流行词库 ${{ steps.version.outputs.value }}"
 
       - name: Push changes
         if: steps.diff.outputs.changed == 'true'
